@@ -1,5 +1,6 @@
 import { useEffect , useState} from "react"
 import {io} from "socket.io-client"
+import { useParams } from "react-router-dom"
 import {Box} from "@mui/material"
 import Quill from "quill"
 import "quill/dist/quill.snow.css"
@@ -30,12 +31,15 @@ const toolbarOptions = [
 //DocumentFunctionalComponent
 const Document = () => {
 
+  const {id} = useParams()
   const [socket,setSocket]=useState();
   const [quill,setQuill] = useState();
 
   useEffect(()=>
   {
   const quillServer= new Quill('#container',{theme: 'snow', modules: { toolbar:toolbarOptions}})
+  quillServer.disable()
+  quillServer.setText("Loading your document...")
   setQuill(quillServer);
   }, [])
 
@@ -80,6 +84,17 @@ useEffect(()=>
   }
 }, [quill,socket])
  
+useEffect(()=>
+{
+if(quill===null || socket===null) return;
+socket && socket.once('load-document',document=>
+{
+  quill && quill.setContents(document);
+  quill && quill.enable()
+})
+socket && socket.emit('get-document', id)
+},[quill,socket,id])
+
 //Render
   return (
     <Component>
